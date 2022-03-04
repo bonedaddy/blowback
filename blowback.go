@@ -3,12 +3,9 @@ package blowback
 import (
 	"context"
 	"fmt"
-	"io"
-	"os"
 
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/pkg/nonwriter"
-	"github.com/coredns/coredns/plugin/pkg/replacer"
 
 	"github.com/miekg/dns"
 )
@@ -22,13 +19,9 @@ type Blowback struct {
 	ProxyServerURL string
 }
 
-const format = `{remote} ` + replacer.EmptyValue + ` {>id} {type} {class} {name} {proto} {port}`
-
-var output io.Writer = os.Stdout
-
 // ServeDNS implements the plugin.Handler interface.
 func (b Blowback) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
-
+	fmt.Printf("%+v\n", r)
 	nw := nonwriter.New(w)
 	rcode, err := plugin.NextOrFailure(b.Name(), b.Next, ctx, nw, r)
 	if err != nil {
