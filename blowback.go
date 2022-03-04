@@ -2,13 +2,15 @@ package blowback
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/coredns/coredns/plugin"
+	clog "github.com/coredns/coredns/plugin/pkg/log"
 	"github.com/coredns/coredns/plugin/pkg/nonwriter"
 
 	"github.com/miekg/dns"
 )
+
+var log = clog.NewWithPlugin("blowback")
 
 // Dump implement the plugin interface.
 type Blowback struct {
@@ -21,16 +23,19 @@ type Blowback struct {
 
 // ServeDNS implements the plugin.Handler interface.
 func (b Blowback) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
-	fmt.Printf("%+v\n", r)
+	log.Info("initializing new nonwriter")
 	nw := nonwriter.New(w)
 	rcode, err := plugin.NextOrFailure(b.Name(), b.Next, ctx, nw, r)
 	if err != nil {
+		log.Error("plugin.NextOrFailure error", err.Error())
 		return rcode, err
 	}
+	log.Info("plugin.NextOrFailure ok. rcode %v", rcode)
 	r = nw.Msg
-	fmt.Printf("%+v\n", r)
+	log.Info("nw.Msg %+v", r)
 	err = w.WriteMsg(r)
 	if err != nil {
+		log.Error("w.WriteMsg failed", err.Error())
 		return 1, err
 	}
 	return 0, nil

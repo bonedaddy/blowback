@@ -30,7 +30,6 @@ func setup(c *caddy.Controller) error {
 func parse(c *caddy.Controller) (*Blowback, error) {
 	blowbackPlugin := New()
 	for c.Next() {
-		fmt.Println("a")
 		args := c.RemainingArgs()
 		switch len(args) {
 		case 0:
