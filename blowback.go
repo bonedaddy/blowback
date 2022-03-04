@@ -2,6 +2,7 @@ package blowback
 
 import (
 	"context"
+	"strings"
 
 	"github.com/coredns/coredns/plugin"
 	clog "github.com/coredns/coredns/plugin/pkg/log"
@@ -27,6 +28,9 @@ func (b Blowback) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg
 	nw := nonwriter.New(w)
 	rcode, err := plugin.NextOrFailure(b.Name(), b.Next, ctx, nw, r)
 	if err != nil {
+		if strings.Contains(err.Error(), "no next plugin") {
+			return 0, nil
+		}
 		log.Error("plugin.NextOrFailure error", err.Error())
 		return rcode, err
 	}
