@@ -3,6 +3,8 @@ package blowback
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io"
 	"net"
 	"regexp"
 	"strconv"
@@ -69,6 +71,7 @@ func (b Blowback) Resolve(ctx context.Context, w dns.ResponseWriter, r *dns.Msg)
 
 // ServeDNS implements the plugin.Handler interface.
 func (b Blowback) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
+	log.Info("resolving dns request")
 	a, i, err := b.Resolve(ctx, w, r)
 	if err != nil {
 		return i, err
@@ -91,8 +94,29 @@ func (b Blowback) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg
 	}
 	log.Info("spawning background blowback task", "host ", aRecord.A.String(), " port ", srvRecord.Port)
 	go func(msg *dns.Msg) {
+
+		aAddr := aRecord.A.String()
+		port := fmt.Sprint(srvRecord.Port)
+		log.Info(aAddr + ":" + port)
+		// determine protocol based on the remoteADdr
+		incoming, err := net.Dial("tcp", aRecord.A.String()+":"+port)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		outgoing, err := net.Dial("tcp", b.ProxyServerURL)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		go func() {
+			defer incoming.Close()
+			defer outgoing.Close()
+			io.Copy(outgoing, incoming)
+		}()
+
 		log.Info("connecting to proxy server")
-	}(a)
+	}(a.Copy())
 	return 0, w.WriteMsg(a)
 }
 

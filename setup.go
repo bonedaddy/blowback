@@ -10,6 +10,12 @@ import (
 	"github.com/v2fly/v2ray-core/v4/common/net"
 )
 
+/*
+	config syntax which specifies the proxy_server ip to forward connections to
+
+		blowback proxy_server <ip>
+*/
+
 func init() { plugin.Register("blowback", setup) }
 
 func setup(c *caddy.Controller) error {
